@@ -8,7 +8,7 @@ QtObject {
 
     // Group for workspace-specific colors
     property QtObject workspaces: QtObject {
-        property color background: "#a0f0f0f0" // A very light gray
+        property color background: "#a0020202" // A very light gray
         property color active: "#ff7a00" // The main orange accent color
         property color focused: "#a0ff40" // Bright green
         property color hasUrgent: "#ff4040" // Red

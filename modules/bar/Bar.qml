@@ -73,6 +73,7 @@ PanelWindow {
 
             // Audio Section
             Rectangle {
+                id: audioWrapper
                 color: Globals.Colors.audio.background
                 Layout.fillWidth: true
                 // Layout.preferredHeight: 40
@@ -81,11 +82,12 @@ PanelWindow {
                 implicitHeight: myAudio.implicitHeight
 
                 Audio {
-                    id:myAudio
+                    id: myAudio
                     anchors.fill: parent
                     anchors.margins: 4
-                    implicitHeight:50
-                }   
+                    implicitHeight: 50
+                    popupParent: bar
+                }
             }
         }
     }

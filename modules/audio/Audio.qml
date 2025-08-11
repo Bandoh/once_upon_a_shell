@@ -3,9 +3,14 @@ import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Quickshell.Services.Pipewire
 import "../../globals" as Globals
+import "./AudioPopUp.qml"
 
 Item {
     id: audioModule
+
+    // This property allows the parent component to specify where the popup should be parented.
+    // This is important for ensuring the popup can be displayed over other elements.
+    property Item popupParent: parent
 
     // The node to control, in this case the default audio sink
     property PwNode node: Pipewire.defaultAudioSink
@@ -43,114 +48,22 @@ Item {
    
     }
 
-    // Timer to close popup on hover-out
-    Timer {
-        id: closePopupTimer
-        interval: 200
-        repeat: false
-        onTriggered: audioPopup.close()
-    }
-
-    // Hover area to open the popup
+    // Click area to open the popup
     MouseArea {
         anchors.fill: mainDisplay
-        hoverEnabled: true
-        onEntered: {
-            closePopupTimer.stop()
+        onClicked: {
+            // We need to map the coordinates of our Audio module to the coordinate system
+            // of the popup's parent. This ensures the popup appears in the correct location.
+            var point = audioModule.mapToItem(popupParent, 0, 0)
+            audioPopup.x = point.x + (audioModule.width - audioPopup.width) / 2
+            audioPopup.y = point.y - audioPopup.height - 10
             audioPopup.open()
-        }
-        onExited: {
-            closePopupTimer.start()
         }
     }
 
-    // The popup that contains the controls
-    Popup {
+    AudioPopUp {
         id: audioPopup
-        width: 120
-        height: 180
-        x: (parent.width - width) / 2
-        y: -190 // Position above the main item
-        modal: true
-        focus: true
-        closePolicy: Popup.CloseOnEscape
-
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            onEntered: closePopupTimer.stop()
-            onExited: closePopupTimer.start()
-        }
-
-        background: Rectangle {
-            color: Globals.Colors.audio.background
-            radius: 10
-            border.color: "#cccccc"
-            border.width: 1
-        }
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 10
-            spacing: 10
-
-            // Mute Button
-            Button {
-                id: muteButton
-                Layout.alignment: Qt.AlignHCenter
-                text: node && node.audio && node.audio.muted ? "Unmute" : "Mute"
-                onClicked: {
-                    if (node && node.audio) {
-                        node.audio.muted = !node.audio.muted;
-                    }
-                }
-                
-                background: Rectangle {
-                    color: muteButton.pressed ? Qt.darker(muteButton.buttonColor) : muteButton.buttonColor
-                    radius: 5
-                }
-
-                property color buttonColor: {
-                    if (node && node.audio && node.audio.muted) {
-                        return Globals.Colors.audio.muted;
-                    } else {
-                        return Globals.Colors.audio.unmuted;
-                    }
-                }
-            }
-
-            // Vertical Volume Slider
-            Slider {
-                id: volumeSlider
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                orientation: Qt.Vertical
-                value: node && node.audio ? node.audio.volume : 0
-
-                onValueChanged: {
-                    if (node && node.audio) {
-                        node.audio.volume = value;
-                    }
-                }
-
-                background: Rectangle {
-                    x: volumeSlider.leftPadding + volumeSlider.padding
-                    y: volumeSlider.topPadding
-                    width: volumeSlider.availableWidth
-                    height: volumeSlider.availableHeight
-                    radius: 5
-                    color: Globals.Colors.audio.sliderBackground
-                }
-
-                handle: Rectangle {
-                    x: volumeSlider.leftPadding
-                    y: volumeSlider.visualPosition * (volumeSlider.availableHeight - height)
-                    width: volumeSlider.availableWidth + volumeSlider.padding * 2
-                    height: 10
-                    radius: 3
-                    color: Globals.Colors.audio.volumeBar
-                }
-            }
-        }
+        parent: popupParent
+        audioNode: audioModule.node
     }
 }
