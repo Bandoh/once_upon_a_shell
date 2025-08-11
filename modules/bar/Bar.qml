@@ -17,6 +17,7 @@ PanelWindow {
         top: 10
         left: 0
         right: 0
+        bottom: 10
     }
 
     color: Globals.Colors.background
@@ -74,13 +75,16 @@ PanelWindow {
             Rectangle {
                 color: Globals.Colors.audio.background
                 Layout.fillWidth: true
-                Layout.preferredHeight: 160
+                // Layout.preferredHeight: 40
                 radius: 10
                 anchors.margins: 4
+                implicitHeight: myAudio.implicitHeight
 
                 Audio {
+                    id:myAudio
                     anchors.fill: parent
                     anchors.margins: 4
+                    implicitHeight:50
                 }   
             }
         }
