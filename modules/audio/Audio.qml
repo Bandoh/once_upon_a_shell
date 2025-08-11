@@ -16,13 +16,21 @@ Item {
     }
 
     // This is the main display that is always visible
-    RowLayout {
+    ColumnLayout {
         id: mainDisplay
         anchors.centerIn: parent
-        spacing: 8
+        spacing: 4
+             Text {
+            id: volumePercentage
+            Layout.alignment: Qt.AlignHCenter
+            text: node && node.audio ? `${Math.round(node.audio.volume * 100)}%` : "N/A"
+            font.pixelSize: 14
+            color: Globals.Colors.audio.text
+        }
 
         Text {
             id: volumeIcon
+            Layout.alignment: Qt.AlignHCenter
             text: {
                 if (!node || !node.audio || node.audio.muted) return "🔇";
                 if (node.audio.volume < 0.33) return "🔈";
@@ -32,19 +40,28 @@ Item {
             font.pixelSize: 18
             color: Globals.Colors.audio.text
         }
-
-        Text {
-            id: volumePercentage
-            text: node && node.audio ? `${Math.round(node.audio.volume * 100)}%` : "N/A"
-            font.pixelSize: 14
-            color: Globals.Colors.audio.text
-        }
+   
     }
 
-    // Click area to open the popup
+    // Timer to close popup on hover-out
+    Timer {
+        id: closePopupTimer
+        interval: 200
+        repeat: false
+        onTriggered: audioPopup.close()
+    }
+
+    // Hover area to open the popup
     MouseArea {
         anchors.fill: mainDisplay
-        onClicked: audioPopup.open()
+        hoverEnabled: true
+        onEntered: {
+            closePopupTimer.stop()
+            audioPopup.open()
+        }
+        onExited: {
+            closePopupTimer.start()
+        }
     }
 
     // The popup that contains the controls
@@ -56,7 +73,14 @@ Item {
         y: -190 // Position above the main item
         modal: true
         focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        closePolicy: Popup.CloseOnEscape
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: closePopupTimer.stop()
+            onExited: closePopupTimer.start()
+        }
 
         background: Rectangle {
             color: Globals.Colors.audio.background

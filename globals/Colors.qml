@@ -16,7 +16,7 @@ QtObject {
     }
 
     property QtObject audio: QtObject {
-        property color background: "#a0f0f0f0" // A very light gray
+        property color background: "#f9f0f0f0" // A very light gray
         property color muted: "#a0f81f1f" // A very light gray
         property color unmuted: "#7ad117" // A very light gray
         property color text: "#a0000000"

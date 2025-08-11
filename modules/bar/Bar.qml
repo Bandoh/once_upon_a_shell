@@ -51,19 +51,19 @@ PanelWindow {
                 Layout.fillHeight: true
             }
 
-            // Wifi Section
-            Rectangle {
-                color: Globals.Colors.wifi.background
-                Layout.fillWidth: true
-                Layout.preferredHeight: 60
-                radius: 10
-                anchors.margins: 4
+            // // Wifi Section
+            // Rectangle {
+            //     color: Globals.Colors.wifi.background
+            //     Layout.fillWidth: true
+            //     Layout.preferredHeight: 60
+            //     radius: 10
+            //     anchors.margins: 4
 
-                Wifi {
-                    anchors.fill: parent
-                    anchors.margins: 4
-                }
-            }
+            //     Wifi {
+            //         anchors.fill: parent
+            //         anchors.margins: 4
+            //     }
+            // }
 
             Item {
                 Layout.fillWidth: true
