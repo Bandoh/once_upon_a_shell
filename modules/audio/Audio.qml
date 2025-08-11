@@ -1,112 +1,132 @@
-import QtQuick 2.0
-import QtQuick.Layouts
-import Quickshell
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
 import Quickshell.Services.Pipewire
 import "../../globals" as Globals
 
 Item {
-    anchors.fill: parent
+    id: audioModule
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 4
-        spacing: 4
+    // The node to control, in this case the default audio sink
+    property PwNode node: Pipewire.defaultAudioSink
 
-        // Volume control section
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 4
+    // Use a PwObjectTracker to keep the node's properties up-to-date
+    PwObjectTracker {
+        objects: [audioModule.node]
+    }
 
-            // Mute button
-            Rectangle {
-                id: muteButton
-                Layout.preferredWidth: 28
-                Layout.preferredHeight: 28
-                color: Pipewire.defaultAudioSink?.audio?.muted ? 
-                       Globals.Colors.audio.muted : 
-                       Globals.Colors.audio.unmuted
-                radius: 6
+    // This is the main display that is always visible
+    RowLayout {
+        id: mainDisplay
+        anchors.centerIn: parent
+        spacing: 8
 
-                Text {
-                    anchors.centerIn: parent
-                    text: Pipewire.defaultAudioSink?.audio?.muted ? "🔇" : "🔊"
-                    font.pixelSize: 14
-                    color: Globals.Colors.audio.text
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        if (Pipewire.defaultAudioSink?.audio) {
-                            Pipewire.defaultAudioSink.audio.muted = !Pipewire.defaultAudioSink.audio.muted
-                        }
-                    }
-                }
-            }
-        }
-
-        // Volume slider representation (visual indicator)
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 6
-            color: Globals.Colors.audio.sliderBackground
-            radius: 3
-
-            Rectangle {
-                id: volumeIndicator
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width * (Pipewire.defaultAudioSink?.audio?.volume || 0)
-                height: parent.height
-                color: Pipewire.defaultAudioSink?.audio?.muted ? 
-                       Globals.Colors.audio.muted : 
-                       Globals.Colors.audio.volumeBar
-                radius: 3
-
-                Behavior on width {
-                    NumberAnimation {
-                        duration: 150
-                        easing.type: Easing.OutQuad
-                    }
-                }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    if (Pipewire.defaultAudioSink?.audio) {
-                        var newVolume = mouse.x / width
-                        Pipewire.defaultAudioSink.audio.volume = Math.max(0, Math.min(1, newVolume))
-                    }
-                }
-            }
-        }
-
-        // Volume percentage text
         Text {
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignHCenter
-            text: Pipewire.defaultAudioSink?.audio ? 
-                  Math.round((Pipewire.defaultAudioSink.audio.volume || 0) * 100) + "%" : 
-                  "N/A"
-            font.pixelSize: 10
+            id: volumeIcon
+            text: {
+                if (!node || !node.audio || node.audio.muted) return "🔇";
+                if (node.audio.volume < 0.33) return "🔈";
+                if (node.audio.volume < 0.66) return "🔉";
+                return "🔊";
+            }
+            font.pixelSize: 18
             color: Globals.Colors.audio.text
-            horizontalAlignment: Text.AlignHCenter
+        }
+
+        Text {
+            id: volumePercentage
+            text: node && node.audio ? `${Math.round(node.audio.volume * 100)}%` : "N/A"
+            font.pixelSize: 14
+            color: Globals.Colors.audio.text
         }
     }
 
-    // Mouse wheel support for volume adjustment
+    // Click area to open the popup
     MouseArea {
-        anchors.fill: parent
-        onWheel: {
-            if (Pipewire.defaultAudioSink?.audio) {
-                var currentVolume = Pipewire.defaultAudioSink.audio.volume || 0
-                var delta = wheel.angleDelta.y > 0 ? 0.05 : -0.05
-                var newVolume = Math.max(0, Math.min(1, currentVolume + delta))
-                Pipewire.defaultAudioSink.audio.volume = newVolume
+        anchors.fill: mainDisplay
+        onClicked: audioPopup.open()
+    }
+
+    // The popup that contains the controls
+    Popup {
+        id: audioPopup
+        width: 120
+        height: 180
+        x: (parent.width - width) / 2
+        y: -190 // Position above the main item
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        background: Rectangle {
+            color: Globals.Colors.audio.background
+            radius: 10
+            border.color: "#cccccc"
+            border.width: 1
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 10
+            spacing: 10
+
+            // Mute Button
+            Button {
+                id: muteButton
+                Layout.alignment: Qt.AlignHCenter
+                text: node && node.audio && node.audio.muted ? "Unmute" : "Mute"
+                onClicked: {
+                    if (node && node.audio) {
+                        node.audio.muted = !node.audio.muted;
+                    }
+                }
+                
+                background: Rectangle {
+                    color: muteButton.pressed ? Qt.darker(muteButton.buttonColor) : muteButton.buttonColor
+                    radius: 5
+                }
+
+                property color buttonColor: {
+                    if (node && node.audio && node.audio.muted) {
+                        return Globals.Colors.audio.muted;
+                    } else {
+                        return Globals.Colors.audio.unmuted;
+                    }
+                }
+            }
+
+            // Vertical Volume Slider
+            Slider {
+                id: volumeSlider
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                orientation: Qt.Vertical
+                value: node && node.audio ? node.audio.volume : 0
+
+                onValueChanged: {
+                    if (node && node.audio) {
+                        node.audio.volume = value;
+                    }
+                }
+
+                background: Rectangle {
+                    x: volumeSlider.leftPadding + volumeSlider.padding
+                    y: volumeSlider.topPadding
+                    width: volumeSlider.availableWidth
+                    height: volumeSlider.availableHeight
+                    radius: 5
+                    color: Globals.Colors.audio.sliderBackground
+                }
+
+                handle: Rectangle {
+                    x: volumeSlider.leftPadding
+                    y: volumeSlider.visualPosition * (volumeSlider.availableHeight - height)
+                    width: volumeSlider.availableWidth + volumeSlider.padding * 2
+                    height: 10
+                    radius: 3
+                    color: Globals.Colors.audio.volumeBar
+                }
             }
         }
-        // Allow events to propagate to child mouse areas
-        propagateComposedEvents: true
     }
 }
